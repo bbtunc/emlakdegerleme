@@ -819,8 +819,8 @@
 
 async function askGeminiAI(question, context) {
     try {
-        // Artık anahtar yok! Sunucuya (Vercel'e) soruyoruz
-        const response = await fetch('/api/gemini', {  // ← bu önemli: /api/gemini
+        // Artık anahtar yok! Vercel'deki /api/gemini'ye istek atıyoruz
+        const response = await fetch('/api/gemini', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ question, context })
@@ -829,14 +829,15 @@ async function askGeminiAI(question, context) {
         const data = await response.json();
 
         if (!response.ok || data.error) {
-            console.error("Hata:", data.error || "Sunucu hatası");
-            return { error: true, message: 'AI cevap veremedi, lütfen tekrar dene.' };
+            console.error("Sunucu hatası:", data.error || "Bilinmeyen hata");
+            return { error: true, message: 'AI cevap veremedi. Lütfen tekrar dene veya sayfayı yenile.' };
         }
 
+        // Başarılı cevap
         return { error: false, message: data.message };
     } catch (error) {
         console.error("Bağlantı hatası:", error);
-        return { error: true, message: 'İnternet sorunu: ' + error.message };
+        return { error: true, message: 'İnternet veya sunucu sorunu: ' + error.message };
     }
 }
     </script>
