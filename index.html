@@ -911,7 +911,53 @@ async function askGeminiAI(question, context) {
             autoLoadGithubKMZ();
         
         };
+// YENİ FONKSİYON: GitHub'daki KMZ dosyasını otomatik çeker, açar ve işler
+async function autoLoadGithubKMZ() {
+    // Dosya adını buraya tam olarak yaz (boşluklara ve parantezlere dikkat)
+    const fileName = 'Pym-Gayrimenkuller (1).kmz'; 
+    const layerName = 'Pym Gayrimenkuller'; // Sol menüde görünecek isim
 
+    try {
+        console.log(`📂 ${fileName} dosyası aranıyor...`);
+        
+        // Dosyayı fetch et
+        const response = await fetch('./' + fileName);
+        
+        if (!response.ok) {
+            console.warn(`⚠️ ${fileName} bulunamadı. Dosya ismini ve konumunu kontrol edin.`);
+            return;
+        }
+
+        // KMZ binary (ikili) bir dosya olduğu için 'blob' olarak alıyoruz
+        const blob = await response.blob();
+        
+        // JSZip kütüphanesini kullanarak dosyayı açıyoruz
+        const zip = new JSZip();
+        const contents = await zip.loadAsync(blob);
+        
+        // Zip içindeki ilk .kml uzantılı dosyayı buluyoruz
+        const kmlFileName = Object.keys(contents.files).find(name => name.endsWith('.kml'));
+        
+        if (!kmlFileName) {
+            console.error("❌ KMZ dosyasının içinde geçerli bir KML bulunamadı.");
+            return;
+        }
+
+        // KML içeriğini metin (string) olarak okuyoruz
+        const kmlText = await contents.files[kmlFileName].async('string');
+        
+        // omnivore ile parse edip haritaya ekliyoruz
+        const layer = omnivore.kml.parse(kmlText);
+        
+        // Sisteme katman olarak ekle
+        await processLayer(layerName, layer);
+        
+        console.log(`✅ ${fileName} başarıyla yüklendi ve haritaya eklendi.`);
+
+    } catch (error) {
+        console.error(`❌ ${fileName} otomatik yüklenirken hata oluştu:`, error);
+    }
+}
         // YENİ FONKSİYON: GitHub'daki data.kml dosyasını çeker ve haritaya işler
         async function autoLoadGithubKML() {
             const fileName = 'data.kml'; // Dosya adı tam olarak bu olmalı
